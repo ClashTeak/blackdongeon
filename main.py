@@ -42,14 +42,14 @@ class Game:
 		textSurface = font.render(text,True,color)
 		surface.blit(textSurface,(x,y))
 	
-	def save(self,path,properties,playerName):
+	def save(self,path,toSave,name):
 		t = ""
-		with open (path+playerName,"w+") as f:
-			for p in properties:
-				t = t + str(p)
-				if properties.index(p) != len(properties)-1:
+		with open (path+name,"w+") as f:
+			for s in toSave:
+				t = t + str(s)
+				if toSave.index(s) != len(toSave)-1:
 					t = t + '/'
-			f.write(str(playerName+" : "+t))
+			f.write(str(name+" : "+t))
 	
 	def load(self,path,name):
 		with open (path+name,"r") as f:
@@ -79,29 +79,30 @@ class Game:
 		buttons = [button_warrior,button_bowman,button_wizard]
 		buttons[0].waspressed = True
 		
-		currentProperties = CLASSES_PROPERTIES[0]
+		currentSkills = SKILLS_PRESETS[0]
 		
 		nameInputX,nameInputY = int(self.XWIN/(1280/300)), int(self.YWIN/(720/510))
-		nameInput = InputBox(nameInputX,nameInputY,20,int(self.YWIN/(720/45)),[COLORS[9],COLORS[0]],FONTS[0],int(self.XWIN*self.YWIN/(1280*720/5)))
+		nameInput = InputBox(nameInputX,nameInputY,50,int(self.YWIN/(720/45)),[COLORS[9],COLORS[0]],FONTS[0],int(self.XWIN*self.YWIN/(1280*720/5)))
 		
 		continueInterface = True
 		while continueInterface:
+			#EVENTS
 			for event in pygame.event.get():
 				if event.type == QUIT:
 					self.stop()
 				elif event.type == KEYDOWN and event.key == K_ESCAPE:
 					continueInterface = False
+				
 				nameInput.handle_event(event)
 				for b in buttons:
 					b.handle_event(event)
-				
 				if nameInput.text != "":
 					button_start.handle_event(event)
 					
-					
+			#SKILLS BUTTON SELECTION
 			for b in buttons:
 				if b.pressed:
-					currentProperties = CLASSES_PROPERTIES[buttons.index(b)]
+					currentSkills = SKILLS_PRESETS[buttons.index(b)]
 					other = [x for i,x in enumerate(buttons) if i!=buttons.index(b)]
 					for o in other:
 						o.waspressed = False		
@@ -110,11 +111,11 @@ class Game:
 				continueInterface = False
 				if nameInput.text[-1:] == ' ':
 					nameInput.text = nameInput.text[:-1]
-					
-				self.save(SAVESFOLDER,currentProperties,nameInput.text)
-				self.game(nameInput.text,PlayerProperties(*currentProperties))
+				self.save(SAVESFOLDER,[currentSkills,100],nameInput.text)
+				self.game(nameInput.text,PlayerProperties(currentSkills))
 				break
 			
+			# DISPLAY
 			self.window.fill(COLORS[1])
 			
 			for b in buttons:

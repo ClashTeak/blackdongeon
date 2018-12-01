@@ -93,16 +93,13 @@ class InputBox:
 
 
 class PlayerProperties:
-	def __init__(self,*args):
-		try:
-			self.name = args[0]
-			self.maxStamina = args[2]
-			self.maxHealth = args[1]
-			self.strength = args[3]
-			self.maxMana = args[4]
-		except:
-			self.name = "Name"
-			self.maxHealth,self.maxStamina,self.strength,self.maxMana = 0,0,0,0
+	def __init__(self,preset):
+		self.skills = preset
+		self.name = self.skills[SKILLS[0]]
+		self.maxStamina = self.skills[SKILLS[1]]
+		self.maxHealth = self.skills[SKILLS[2]]
+		self.strength = self.skills[SKILLS[3]]
+		self.maxMana = self.skills[SKILLS[4]]
 
 
 class Button(pygame.sprite.Sprite):
