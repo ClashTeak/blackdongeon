@@ -1,4 +1,4 @@
-import pygame,sys,random
+import pygame,sys,random, json, os
 from pygame.locals import *
 from settings import *
 from classes import *
@@ -42,26 +42,43 @@ class Game:
 		textSurface = font.render(text,True,color)
 		surface.blit(textSurface,(x,y))
 	
-	def save(self,path,toSave,name):
-		t = ""
-		with open (path+name,"w+") as f:
-			for s in toSave:
-				t = t + str(s)
-				if toSave.index(s) != len(toSave)-1:
-					t = t + '/'
-			f.write(str(name+" : "+t))
+	def save(self,path,toSave):
+		with open(path,"w+") as f:
+			json.dump(toSave, f,indent=2)
 	
-	def load(self,path,name):
-		with open (path+name,"r") as f:
-			r = f.read()
+	def showFilesFolder(self,path):
+		files = os.listdir(path)
+		return files
+	
+	def load(self,path):
+		try:
+			with open(path) as f:
+				return json.load(f)
+		except:
+			return None
 			
 			
+	def loadInterface(self):
+		
+		continueInterface = True
+		
+		while continueInterface:
+			for event in pygame.event.get():
+				if event.type == QUIT:
+					self.stop()
+				elif event.type == KEYDOWN:
+					if event.key == K_ESCAPE:
+						continueInterface = False
+			
+			self.window.fill(COLORS[1])
+			pygame.display.update()
+			self.clock.tick(self.FPS)
 	
 	def creationInterface(self):
 		title_x = int(self.XWIN/2-(((game.XWIN/64)+(game.YWIN/64))*(len(self.title)-3)))
-		title_y = int(self.YWIN/(720/100))
+		title_y = self.applyY(100)
 		
-		button_width, button_height = int(self.XWIN/(1280/300)), int(self.YWIN/(720/200))
+		button_width, button_height = self.applyX(300), self.applyY(200)
 		
 		button_warrior_x, button_warrior_y = int(self.XWIN/4)-int(button_width/2), int(self.YWIN/2)-int(button_height/2)
 		button_warrior = Button(button_warrior_x,button_warrior_y,button_width,button_height,[COLORS[6],COLORS[8],COLORS[8]],FONTS[0],"WARRIOR",COLORS[0])
@@ -111,8 +128,11 @@ class Game:
 				continueInterface = False
 				if nameInput.text[-1:] == ' ':
 					nameInput.text = nameInput.text[:-1]
-				self.save(SAVESFOLDER,[currentSkills,100],nameInput.text)
-				self.game(nameInput.text,PlayerProperties(currentSkills))
+				new_data = PLAYER_JSON_MODEL
+				new_data["player"][0][PLAYER_KEY[0]] = nameInput.text
+				new_data["player"][0][PLAYER_KEY[4]] = currentSkills
+				self.save(SAVESFOLDER+nameInput.text,new_data)
+				self.game(new_data)
 				break
 			
 			# DISPLAY
@@ -134,11 +154,11 @@ class Game:
 			pygame.display.update()
 			self.clock.tick(self.FPS)
 	
-	def game(self,playerName="",playerClass=None):
-		player_size = int(self.XWIN*self.YWIN/(1280*720/25)) # 25 = default size on 1280 * 720 resolution
+	def game(self,playerData):
+		data = playerData
+		data["player"][0][PLAYER_KEY[3]] = self.applyXY(data["player"][0][PLAYER_KEY[3]]) # 25 = default size on 1280 * 720 resolution
 		player_speed = int(self.XWIN*self.YWIN/(1280*720/5))
-		player_start_posX, player_start_posY = int(self.XWIN/2) - player_size, int(self.YWIN/2) - player_size
-		player = Player(player_start_posX,player_start_posY,player_size,player_size,player_speed,playerName,playerClass)
+		player = Player(data,player_speed)
 		
 		continueGame = True
 		while continueGame:
@@ -224,7 +244,7 @@ class Game:
 			if button_load.pressed:
 				played = False
 				button_load.pressed = False
-				self.game()
+				self.loadInterface()
 			if button_create.pressed:
 				played = False
 				button_create.pressed = False

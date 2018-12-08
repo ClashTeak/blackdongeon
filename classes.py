@@ -8,18 +8,27 @@ pygame.init()
 
 
 class Player(pygame.sprite.Sprite):
-	def __init__(self,x,y,w,h,speed,name,properties,color=COLORS[0]):
-		self.rect = Rect(x,y,w,h)
-		self.sx,self.sy = 0,0
+	def __init__(self,data,speed):
+		self.data = data
+		
+		for p in self.data["player"]:
+			self.rect = Rect(p[PLAYER_KEY[2]]["x"],p[PLAYER_KEY[2]]["y"],p[PLAYER_KEY[3]],p[PLAYER_KEY[3]])
+			self.color = pygame.Color(p[PLAYER_KEY[5]]["red"],p["color"]["green"],p["color"]["blue"])
+			
+			self.coins = p[PLAYER_KEY[1]]
+			
+			self.name = p[PLAYER_KEY[0]]
+			self.skills = p[PLAYER_KEY[4]]
+		
 		self.speed = speed
 		
-		self.color = color
+		self.sx,self.sy = 0,0
+		self.events = [0,0,0] # 0:x-axis    1:y-axis    2:attack
+		
 		self.picture = pygame.Surface((self.rect.width,self.rect.height))
 		self.picture.fill(self.color)
 		
-		self.events = [0,0,0] # 0:x-axis    1:y-attack    2:attack
-		self.name = name
-		self.properties = properties
+		self.updateData()
 	
 	def update(self):
 		self.sy = self.events[1] * self.speed
@@ -27,6 +36,17 @@ class Player(pygame.sprite.Sprite):
 		
 		self.rect.x += self.sx
 		self.rect.y += self.sy
+		
+		self.updateData()
+	
+	def updateData(self):
+		for p in self.data["player"]:
+			p[PLAYER_KEY[0]] = self.name
+			p[PLAYER_KEY[1]] = self.coins
+			p[PLAYER_KEY[2]]["x"],p[PLAYER_KEY[2]]["y"] = self.rect.x,self.rect.y
+			p[PLAYER_KEY[3]] = self.rect.width
+			p[PLAYER_KEY[4]] = self.skills
+			p[PLAYER_KEY[5]]["red"],p[PLAYER_KEY[5]]["green"],p[PLAYER_KEY[5]]["blue"] = self.color.r,self.color.g,self.color.b
 	
 	def draw(self,surface,camera=None):
 		if camera != None:

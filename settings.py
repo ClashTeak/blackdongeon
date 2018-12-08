@@ -1,4 +1,4 @@
-import pygame, sys, random
+import pygame, sys, random,json
 from pygame.locals import *
 
 pygame.init()
@@ -30,10 +30,27 @@ COLORS = [
 
 SAVESFOLDER = "saves/"
 
-SKILLS = ["name","maxStamina","maxHealth","strength","maxMana"]
+SKILLS = ["name","maxstamina","maxhealth","strength","maxmana"]
+PLAYER_KEY = ["name","coins","pos","size","skills","color"]
 
 SKILLS_PRESETS = [
-    {SKILLS[0]:"WARRIOR",SKILLS[1]:70,SKILLS[2]:120,SKILLS[3]:150,SKILLS[4]:10}, # WARRIOR
-    {SKILLS[0]:"BOWMAN",SKILLS[1]:100,SKILLS[2]:100,SKILLS[3]:80, SKILLS[4]:50}, # BOWMAN
-    {SKILLS[0]:"WIZARD",SKILLS[1]:85, SKILLS[2]:120,SKILLS[3]:60,SKILLS[4]:100}  # WIZARD
+	{SKILLS[0]:"WARRIOR",SKILLS[1]:70,SKILLS[2]:120,SKILLS[3]:150,SKILLS[4]:10}, # WARRIOR
+	{SKILLS[0]:"BOWMAN",SKILLS[1]:100,SKILLS[2]:100,SKILLS[3]:80, SKILLS[4]:50}, # BOWMAN
+	{SKILLS[0]:"WIZARD",SKILLS[1]:85, SKILLS[2]:120,SKILLS[3]:60,SKILLS[4]:100}  # WIZARD
 ]
+
+PLAYER_SAVE_MODEL = '''
+{
+  "player": [
+    {
+      "'''+PLAYER_KEY[0]+'''": "",
+      "'''+PLAYER_KEY[1]+'''": 100,
+      "'''+PLAYER_KEY[2]+'''": {"x":800, "y":500},
+      "'''+PLAYER_KEY[3]+'''": 25,
+      "'''+PLAYER_KEY[4]+'''": '''+str(SKILLS_PRESETS[0]).replace("'",'"')+''',
+      "'''+PLAYER_KEY[5]+'''": {"red":255,"green":255,"blue":255}
+    }
+  ]
+}
+'''
+PLAYER_JSON_MODEL = json.loads(PLAYER_SAVE_MODEL)
