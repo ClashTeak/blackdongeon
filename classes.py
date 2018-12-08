@@ -13,10 +13,8 @@ class Player(pygame.sprite.Sprite):
 		
 		for p in self.data["player"]:
 			self.rect = Rect(p[PLAYER_KEY[2]]["x"],p[PLAYER_KEY[2]]["y"],p[PLAYER_KEY[3]],p[PLAYER_KEY[3]])
-			self.color = pygame.Color(p[PLAYER_KEY[5]]["red"],p["color"]["green"],p["color"]["blue"])
-			
+			self.color = pygame.Color(p[PLAYER_KEY[5]]["red"],p[PLAYER_KEY[5]]["green"],p[PLAYER_KEY[5]]["blue"])
 			self.coins = p[PLAYER_KEY[1]]
-			
 			self.name = p[PLAYER_KEY[0]]
 			self.skills = p[PLAYER_KEY[4]]
 		
