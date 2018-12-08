@@ -12,11 +12,11 @@ class Player(pygame.sprite.Sprite):
 		self.data = data
 		
 		for p in self.data["player"]:
-			self.rect = Rect(p[PLAYER_KEY[2]]["x"],p[PLAYER_KEY[2]]["y"],p[PLAYER_KEY[3]],p[PLAYER_KEY[3]])
-			self.color = pygame.Color(p[PLAYER_KEY[5]]["red"],p[PLAYER_KEY[5]]["green"],p[PLAYER_KEY[5]]["blue"])
-			self.coins = p[PLAYER_KEY[1]]
 			self.name = p[PLAYER_KEY[0]]
+			self.coins = p[PLAYER_KEY[1]]
+			self.rect = Rect(p[PLAYER_KEY[2]]["x"],p[PLAYER_KEY[2]]["y"],p[PLAYER_KEY[3]],p[PLAYER_KEY[3]])
 			self.skills = p[PLAYER_KEY[4]]
+			self.color = pygame.Color(p[PLAYER_KEY[5]]["red"],p[PLAYER_KEY[5]]["green"],p[PLAYER_KEY[5]]["blue"])
 		
 		self.speed = speed
 		
@@ -109,15 +109,6 @@ class InputBox:
 		screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
 		pygame.draw.rect(screen, self.color, self.rect, self.border)
 
-
-class PlayerProperties:
-	def __init__(self,preset):
-		self.skills = preset
-		self.name = self.skills[SKILLS[0]]
-		self.maxStamina = self.skills[SKILLS[1]]
-		self.maxHealth = self.skills[SKILLS[2]]
-		self.strength = self.skills[SKILLS[3]]
-		self.maxMana = self.skills[SKILLS[4]]
 
 
 class Button(pygame.sprite.Sprite):

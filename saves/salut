@@ -1,0 +1,25 @@
+{
+  "player": [
+    {
+      "color": {
+        "green": 255,
+        "red": 255,
+        "blue": 255
+      },
+      "coins": 100,
+      "size": 25,
+      "pos": {
+        "y": 500,
+        "x": 800
+      },
+      "name": "salut",
+      "skills": {
+        "maxmana": 100,
+        "maxhealth": 120,
+        "name": "WIZARD",
+        "strength": 60,
+        "maxstamina": 85
+      }
+    }
+  ]
+}
