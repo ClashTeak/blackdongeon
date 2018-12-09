@@ -25,7 +25,17 @@ COLORS = [
 	pygame.Color(30,30,30),#     Play Button active     06
 	pygame.Color(0,0,0),#        Play Button not active 07
 	pygame.Color(50,50,50),#     GREY                   08
-	pygame.Color(100,100,100)#   LIGHT GREY             09
+	pygame.Color(100,100,100),#  LIGHT GREY             09
+	pygame.Color(20,20,20)#      DARK GREY              10
+]
+PLAYER_COLORS = [
+	pygame.Color(180,96,255),
+	pygame.Color(78,76,232),
+	pygame.Color(75,245,255),
+	pygame.Color(48,232,67),
+	pygame.Color(255,246,75),
+	pygame.Color(255,152,67),
+	pygame.Color(255,85,70)
 ]
 
 SAVESFOLDER = "saves/"
