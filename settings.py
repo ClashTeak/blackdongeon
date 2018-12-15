@@ -4,7 +4,7 @@ from pygame.locals import *
 pygame.init()
 
 
-screenX,screenY = 1280,720
+screenX,screenY = 800,600
 title = "BlackDungeon"
 screenFlag = 0
 
@@ -37,6 +37,12 @@ PLAYER_COLORS = [
 	pygame.Color(255,152,67),
 	pygame.Color(255,85,70)
 ]
+BLOCK_COLORS = {
+	"wall":pygame.Color(50,50,50),
+	"floor":pygame.Color(110,110,110),
+}
+
+DUNGEON_TILES = {'stone': ' ', 'floor': '.', 'wall': '#'}
 
 SAVESFOLDER = "saves/"
 
@@ -60,7 +66,8 @@ PLAYER_SAVE_MODEL = '''
       "'''+PLAYER_KEY[4]+'''": '''+str(SKILLS_PRESETS[0]).replace("'",'"')+''',
       "'''+PLAYER_KEY[5]+'''": {"red":255,"green":255,"blue":255}
     }
-  ]
+  ],
+  "world": ""
 }
 '''
 PLAYER_JSON_MODEL = json.loads(PLAYER_SAVE_MODEL)

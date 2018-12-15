@@ -88,6 +88,9 @@ class Game:
 		player_speed = self.applyXY(5)
 		player = Player(data,player_speed)
 
+		world = World(BLOCK_COLORS,self.applyXY(10))
+		world.generate(data["world"])
+
 		continueGame = True
 		while continueGame:
 			for event in pygame.event.get():
@@ -111,8 +114,13 @@ class Game:
 						player.events[1] = 0
 
 			player.update()
+			world.update(player)
 
 			self.window.fill(COLORS[1])
+
+			for block in world.visible_blocks:
+				block.draw(self.window)
+
 			player.draw(self.window)
 
 			pygame.display.update()
@@ -303,6 +311,11 @@ class Game:
 					player[PLAYER_KEY[5]]["red"] = button_color_switch.currentColor.r
 					player[PLAYER_KEY[5]]["green"] = button_color_switch.currentColor.g
 					player[PLAYER_KEY[5]]["blue"] = button_color_switch.currentColor.b
+
+				gen = Generator()
+				gen.gen_level()
+				level = gen.gen_tiles_level()
+				new_data["world"] = level
 
 				self.save(SAVESFOLDER+nameInput.text,new_data)
 				self.game(new_data)
