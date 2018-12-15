@@ -66,17 +66,24 @@ class Game:
 			return None
 
 
-	def applyX(self,x):
+	def applyX(self,x,res=1280):
 		#apply to the window (changing size) on X
-		return int(self.XWIN/(1280/x))
+		return int(self.XWIN/(res/x))
 
-	def applyY(self,y):
+	def applyY(self,y,res=720):
 		#apply to the window (changing size) on Y
-		return int(self.YWIN/(720/y))
+		return int(self.YWIN/(res/y))
 
-	def applyXY(self,x):
+	def applyXY(self,x,xRes=1280,yRes=720):
 		#apply to the window (changing size) on X and Y
-		return int(self.XWIN*self.YWIN/(1280*720/x))
+		return int(self.XWIN*self.YWIN/(xRes*yRes/x))
+
+
+	# ALL KIND OF CAMERA.
+	def simple_camera(self,camera, target_rect):
+	    l, t, _, _ = target_rect
+	    _, _, w, h = camera
+	    return Rect(-l+self.HALF_XWIN, -t+self.HALF_YWIN, w, h)
 
 
 	#---------------------------------------
@@ -84,21 +91,28 @@ class Game:
 	#---------------------------------------
 	def game(self,playerData):
 		data = playerData
-		data["player"][0][PLAYER_KEY[3]] = self.applyXY(data["player"][0][PLAYER_KEY[3]]) # 25 = default size on 1280 * 720 resolution
+		data["player"][0][PLAYER_KEY[3]] = self.applyXY(data["player"][0][PLAYER_KEY[3]],data["player"][0][PLAYER_KEY[6]]["x"],data["player"][0][PLAYER_KEY[6]]["y"]) # 25 = default size on 1280 * 720 resolution
+		data["player"][0][PLAYER_KEY[2]]["x"] = self.applyX(data["player"][0][PLAYER_KEY[2]]["x"],data["player"][0][PLAYER_KEY[6]]["x"])
+		data["player"][0][PLAYER_KEY[2]]["y"] = self.applyY(data["player"][0][PLAYER_KEY[2]]["y"],data["player"][0][PLAYER_KEY[6]]["y"])
 		player_speed = self.applyXY(5)
 		player = Player(data,player_speed)
 
-		world = World(BLOCK_COLORS,self.applyXY(10))
+		world = World(BLOCK_COLORS,self.applyXY(42))
 		world.generate(data["world"])
 
+		camera = Camera(self.simple_camera,self.XWIN,self.YWIN)
+
 		continueGame = True
+		pause = ""
 		while continueGame:
 			for event in pygame.event.get():
 				if event.type == QUIT:
 					self.stop()
 				elif event.type == KEYDOWN:
 					if event.key == K_ESCAPE:
-						continueGame = False
+						pause = self.pauseMenu()
+						player.sx,player.sy = 0,0
+						player.events = [0,0,0]
 					if event.key == K_LEFT:
 						player.events[0] = -1
 					if event.key == K_RIGHT:
@@ -113,19 +127,90 @@ class Game:
 					if event.key == K_UP or event.key == K_DOWN:
 						player.events[1] = 0
 
-			player.update()
+			if pause == "save":
+				player.updateData()
+				self.save(SAVESFOLDER+player.name,player.data)
+				pause = self.pauseMenu()
+				continue
+			elif pause == "quit":
+				self.continueGame = False
+				break
+
+			player.update(world.visible_blocks)
+			camera.update(player)
 			world.update(player)
 
 			self.window.fill(COLORS[1])
 
 			for block in world.visible_blocks:
-				block.draw(self.window)
+				block.draw(self.window,camera)
 
-			player.draw(self.window)
+			player.draw(self.window,camera)
 
 			pygame.display.update()
 			self.clock.tick(self.FPS)
 
+
+	#---------------------------------------
+	#            PAUSE MENU
+	#---------------------------------------
+	def pauseMenu(self):
+		title_x = int(self.XWIN/2-(self.XWIN/24+self.YWIN/24)*(len(self.title)/3.5))
+		title_y = self.applyY(100)
+
+		button_width, button_height = self.applyX(200), self.applyY(50)
+		buttons_color = [COLORS[7],COLORS[6]]
+
+		button_resume_x = int(self.XWIN/2)-int(button_width/2)
+		button_resume_y = int(self.YWIN/2)-int(button_height/2)
+		button_resume = Button(button_resume_x,button_resume_y,button_width,button_height,buttons_color,FONTS[0],"RESUME",COLORS[0])
+
+		button_save_x, button_save_y = button_resume_x, button_resume_y + self.applyY(100)
+		button_save = Button(button_save_x,button_save_y,button_width,button_height,buttons_color,FONTS[0],"SAVE",COLORS[0])
+
+		button_quit_x, button_quit_y = button_save_x, button_save_y + self.applyY(100)
+		button_quit = Button(button_quit_x,button_quit_y,button_width,button_height,buttons_color,FONTS[0],"QUIT",COLORS[0])
+
+
+		continueInterface = True
+		while continueInterface:
+			for event in pygame.event.get():
+				if event.type == QUIT:
+					self.stop()
+				elif event.type == KEYDOWN:
+					if event.key == K_ESCAPE:
+						continueInterface = False
+						break
+
+				button_resume.handle_event(event)
+				button_save.handle_event(event)
+				button_quit.handle_event(event)
+
+			if button_resume.pressed:
+				continueInterface = False
+				return "resume"
+			if button_save.pressed:
+				continueInterface = False
+				return "save"
+			if button_quit.pressed:
+				continueInterface = False
+				return "quit"
+
+
+			button_resume.update()
+			button_save.update()
+			button_quit.update()
+
+			self.window.fill(COLORS[1])
+
+			button_resume.draw(self.window,self.applyX(-50),self.applyY(-20))
+			button_save.draw(self.window,self.applyX(-35),self.applyY(-20))
+			button_quit.draw(self.window,self.applyX(-35),self.applyY(-20))
+
+			self.text(title_x,title_y,FONTS[1],self.window,self.title,COLORS[0])
+
+			pygame.display.update()
+			self.clock.tick(self.FPS)
 
 
 	#---------------------------------------
@@ -187,6 +272,7 @@ class Game:
 				loaded = self.load(path)
 				if loaded != None:
 					self.game(loaded)
+					continueInterface = False
 					break
 
 			if button_delete.pressed:
@@ -307,10 +393,15 @@ class Game:
 				new_data = PLAYER_JSON_MODEL
 				for player in new_data["player"]:
 					player[PLAYER_KEY[0]] = nameInput.text
+					player[PLAYER_KEY[1]] = STARTCOINS
+					player[PLAYER_KEY[2]]["x"] = int(self.XWIN/2)
+					player[PLAYER_KEY[2]]["y"] = int(self.YWIN/2)
 					player[PLAYER_KEY[4]] = currentSkills
 					player[PLAYER_KEY[5]]["red"] = button_color_switch.currentColor.r
 					player[PLAYER_KEY[5]]["green"] = button_color_switch.currentColor.g
 					player[PLAYER_KEY[5]]["blue"] = button_color_switch.currentColor.b
+					player[PLAYER_KEY[6]]["x"] = self.XWIN
+					player[PLAYER_KEY[6]]["y"] = self.YWIN
 
 				gen = Generator()
 				gen.gen_level()
@@ -397,10 +488,12 @@ class Game:
 				button_play.pressed = False
 				button_play.update()
 
+
 			if button_load.pressed:
 				played = False
 				button_load.pressed = False
 				self.loadInterface()
+
 
 			if button_create.pressed:
 				played = False

@@ -28,14 +28,35 @@ class Player(pygame.sprite.Sprite):
 
 		self.updateData()
 
-	def update(self):
-		self.sy = self.events[1] * self.speed
-		self.sx = self.events[0] * self.speed
+	def update(self,blocks):
 
+		self.collision(blocks,self.sx,0)
+		self.sx = self.events[0] * self.speed
 		self.rect.x += self.sx
+
+		self.collision(blocks,0,self.sy)
+		self.sy = self.events[1] * self.speed
 		self.rect.y += self.sy
 
 		self.updateData()
+
+	def collision(self,blocks,xvel,yvel):
+		for block in blocks:
+			if block.collision:
+				if pygame.sprite.collide_rect(self, block):
+					if xvel > 0:
+						self.rect.right = block.rect.left
+						self.events[0] = 0
+					if xvel < 0:
+						self.rect.left = block.rect.right
+						self.events[0] = 0
+					if yvel > 0:
+						self.rect.bottom = block.rect.top
+						self.events[1] = 0
+					if yvel < 0:
+						self.rect.top = block.rect.bottom
+						self.events[1] = 0
+
 
 	def updateData(self):
 		for p in self.data["player"]:
@@ -45,13 +66,26 @@ class Player(pygame.sprite.Sprite):
 			p[PLAYER_KEY[3]] = self.rect.width
 			p[PLAYER_KEY[4]] = self.skills
 			p[PLAYER_KEY[5]]["red"],p[PLAYER_KEY[5]]["green"],p[PLAYER_KEY[5]]["blue"] = self.color.r,self.color.g,self.color.b
+			p[PLAYER_KEY[6]]["x"] = screenX
+			p[PLAYER_KEY[6]]["y"] = screenY
 
 	def draw(self,surface,camera=None):
 		if camera != None:
-			pass
+			surface.blit(self.picture,camera.apply(self))
 		else:
 			surface.blit(self.picture,self.rect)
 
+
+class Camera(object):
+    def __init__(self, camera_func, width, height):
+        self.camera_func = camera_func
+        self.state = Rect(0, 0, width, height)
+
+    def apply(self, target):
+        return target.rect.move(self.state.topleft)
+
+    def update(self, target):
+        self.state = self.camera_func(self.state, target.rect)
 
 
 
@@ -237,8 +271,11 @@ class Block(pygame.sprite.Sprite):
 		self.surface.fill(self.color)
 		self.collision = collision
 
-	def draw(self,surface):
-		surface.blit(self.surface,self.rect)
+	def draw(self,surface,camera=None):
+		if camera != None:
+			surface.blit(self.surface,camera.apply(self))
+		else:
+			surface.blit(self.surface,self.rect)
 
 
 class World():
@@ -267,8 +304,8 @@ class World():
 
 	def update(self,target):
 		for b in self.world_blocks:
-			if b.rect.x < target.rect.x + 70 and b.rect.x > target.rect.x - 70:
-				if b.rect.y < target.rect.y + 70 and b.rect.y > target.rect.y - 70:
+			if b.rect.x < target.rect.x + 200 and b.rect.x > target.rect.x - 200:
+				if b.rect.y < target.rect.y + 200 and b.rect.y > target.rect.y - 200:
 					if b not in self.visible_blocks:
 						self.visible_blocks.append(b)
 				else:
