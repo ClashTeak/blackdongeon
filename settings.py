@@ -41,13 +41,12 @@ BLOCK_COLORS = {
 	"wall":pygame.Color(20,20,20),
 	"floor":pygame.Color(110,110,110),
 }
+DUNGEON_SPRITE_SIZE = 42
+DUNGEON_TILES = {'stone': ' ', 'floor': '.', 'wall': '#','start':'s'}
 
-DUNGEON_TILES = {'stone': ' ', 'floor': '.', 'wall': '#'}
-
-SAVESFOLDER = "saves/"
 
 SKILLS = ["name","maxstamina","maxhealth","strength","maxmana","attackSpeed"]
-PLAYER_KEY = ["name","coins","pos","size","skills","color","last resolution"]
+PLAYER_KEY = ["name","coins","size","skills","color","last resolution"]
 
 SKILLS_PRESETS = [
 	{SKILLS[0]:"WARRIOR",SKILLS[1]:70,SKILLS[2]:120,SKILLS[3]:150,SKILLS[4]:10,SKILLS[5]:100}, # WARRIOR
@@ -55,21 +54,22 @@ SKILLS_PRESETS = [
 	{SKILLS[0]:"WIZARD",SKILLS[1]:85, SKILLS[2]:120,SKILLS[3]:60,SKILLS[4]:100,SKILLS[5]: 80}  # WIZARD
 ]
 STARTCOINS = 100
+STARTSIZE = 25
 
-PLAYER_SAVE_MODEL = '''
-{
-  "player": [
-    {
-      "'''+PLAYER_KEY[0]+'''": "",
-      "'''+PLAYER_KEY[1]+'''": 0,
-      "'''+PLAYER_KEY[2]+'''": {"x":800, "y":500},
-      "'''+PLAYER_KEY[3]+'''": 25,
-      "'''+PLAYER_KEY[4]+'''": '''+str(SKILLS_PRESETS[0]).replace("'",'"')+''',
-      "'''+PLAYER_KEY[5]+'''": {"red":0,"green":0,"blue":0},
-	  "'''+PLAYER_KEY[6]+'''": {"x":'''+str(screenX)+''',"y":'''+str(screenY)+'''}
-    }
-  ],
-  "world": ""
+PLAYER_JSON_MODEL = {
+  "player":
+    [
+      {
+        PLAYER_KEY[0]:"Name",
+        PLAYER_KEY[1]:STARTCOINS,#coins
+        PLAYER_KEY[2]:STARTSIZE,#default size
+        PLAYER_KEY[3]:SKILLS_PRESETS[0],#skills
+        PLAYER_KEY[4]:{"r":0,"g":0,"b":0},#color
+        PLAYER_KEY[5]:{"x":screenX,"y":screenY} #last resolution
+      }
+	]
 }
-'''
-PLAYER_JSON_MODEL = json.loads(PLAYER_SAVE_MODEL)
+
+SAVESFOLDER = "saves/"
+WORLD_FILE_EXTENSION = "_world.world"
+PLAYER_FILE_EXTENSION = ".player"
