@@ -41,17 +41,18 @@ BLOCK_COLORS = {
 	"wall":pygame.Color(20,20,20),
 	"floor":pygame.Color(110,110,110),
 }
+LIGHT_SPRITE = pygame.image.load("Ressources/Sprites/light.png")
 DUNGEON_SPRITE_SIZE = 42
 DUNGEON_TILES = {'stone': ' ', 'floor': '.', 'wall': '#','start':'s'}
 
 
-SKILLS = ["name","maxstamina","maxhealth","strength","maxmana","attackSpeed"]
+SKILLS = ["name","maxstamina","maxhealth","strength","maxmana","attackSpeed","lightIntensity"]
 PLAYER_KEY = ["name","coins","size","skills","color","last resolution"]
 
 SKILLS_PRESETS = [
-	{SKILLS[0]:"WARRIOR",SKILLS[1]:70,SKILLS[2]:120,SKILLS[3]:150,SKILLS[4]:10,SKILLS[5]:100}, # WARRIOR
-	{SKILLS[0]:"BOWMAN",SKILLS[1]:100,SKILLS[2]:100,SKILLS[3]:80, SKILLS[4]:50,SKILLS[5]:120}, # BOWMAN
-	{SKILLS[0]:"WIZARD",SKILLS[1]:85, SKILLS[2]:120,SKILLS[3]:60,SKILLS[4]:100,SKILLS[5]: 80}  # WIZARD
+	{SKILLS[0]:"WARRIOR",SKILLS[1]:70,SKILLS[2]:120,SKILLS[3]:150,SKILLS[4]:10,SKILLS[5]:100,SKILLS[6]:400}, # WARRIOR
+	{SKILLS[0]:"BOWMAN",SKILLS[1]:100,SKILLS[2]:100,SKILLS[3]:80, SKILLS[4]:50,SKILLS[5]:120,SKILLS[6]:500}, # BOWMAN
+	{SKILLS[0]:"WIZARD",SKILLS[1]:85, SKILLS[2]:120,SKILLS[3]:60,SKILLS[4]:100,SKILLS[5]: 80,SKILLS[6]:550}  # WIZARD
 ]
 STARTCOINS = 100
 STARTSIZE = 25

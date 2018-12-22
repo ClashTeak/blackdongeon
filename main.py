@@ -107,10 +107,15 @@ class Game:
 
 		#camera target=player
 		camera = Camera(self.simple_camera,self.XWIN,self.YWIN)
+		#light filter
+		filter = pygame.surface.Surface(self.DISPLAY,self.FLAGS,self.DEPTH)
+		light_sprite = pygame.transform.scale(LIGHT_SPRITE,
+			(player.skills[SKILLS[6]],player.skills[SKILLS[6]]))
 
 		#place block from saved world (string)
 		world = World(BLOCK_COLORS,self.applyXY(DUNGEON_SPRITE_SIZE))
 		world.generate(worldData)
+
 
 		#Define player spawn position
 		if len(world.start_points) > 0: #choose a random position from start points
@@ -129,6 +134,8 @@ class Game:
 
 		continueGame = True
 		pause = ""
+		lights = True
+		currentFPS = 0
 		while continueGame:
 			#//////EVENTS/////////
 			for event in pygame.event.get():
@@ -147,6 +154,11 @@ class Game:
 						player.events[1] = -1
 					if event.key == K_DOWN:
 						player.events[1] = 1
+					if event.key == K_l:
+						if lights:
+							lights = False
+						else:
+							lights = True
 				elif event.type == KEYUP:
 					if event.key == K_RIGHT:
 						if player.events[0] == 1:
@@ -174,18 +186,30 @@ class Game:
 
 			player.update(world.visible_blocks)
 			camera.update(player)
-			world.update(player)
+			if player.skills[SKILLS[6]] < 500:
+				world.update(player,self.applyXY(player.skills[SKILLS[6]]))
+			else:
+				world.update(player,self.applyXY(100))
 
 			#///////DISPLAY////////
 			self.window.fill(COLORS[1])
 
-			for block in world.world_blocks:
-				block.draw(self.window,camera)
+			if player.skills[SKILLS[6]] < 500:
+				for block in world.visible_blocks:
+					block.draw(self.window,camera)
+			else:
+				for block in world.world_blocks:
+					block.draw(self.window,camera)
 
 			player.draw(self.window,camera)
+			filter.fill(pygame.Color(110,110,110))
+			filter.blit(light_sprite, tuple(map(lambda x: x-int(player.skills[SKILLS[6]]/2-player.rect.width/2),camera.apply(player))))
+			self.window.blit(filter, (0,0), special_flags=pygame.BLEND_RGBA_SUB)
+
+			#self.text(self.applyX(20),self.applyY(20),FONTS[0],self.window,"FPS: "+str(currentFPS),COLORS[0])
 
 			pygame.display.update()
-			self.clock.tick(self.FPS)
+			currentFPS = self.clock.tick(self.FPS)
 
 
 	#---------------------------------------
@@ -309,7 +333,7 @@ class Game:
 			playersFiles = self.showFilesFolder(SAVESFOLDER)
 			filesPanel.elements = []
 			for f in playersFiles:
-				if not WORLD_FILE_EXTENSION in f:
+				if PLAYER_FILE_EXTENSION in f:
 					f = f.replace(PLAYER_FILE_EXTENSION,"")
 					filesPanel.addElement(Button(self.applyX(70),0,button_width,
 						button_height,buttons_color,FONTS[0],f,COLORS[0]))

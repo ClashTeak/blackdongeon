@@ -1,6 +1,7 @@
 import pygame,sys,random
 from pygame.locals import *
 from settings import *
+from math import sqrt
 
 pygame.init()
 
@@ -278,11 +279,13 @@ class Block(pygame.sprite.Sprite):
 	def __init__(self,x,y,w,h,color,collision=True):
 		self.rect = Rect(x,y,w,h)
 		self.color = color
+		self.startColor = color
 		self.surface = pygame.Surface((w,h))
 		self.surface.fill(self.color)
 		self.collision = collision
 
 	def draw(self,surface,camera=None):
+		self.surface.fill(self.color)
 		if camera != None:
 			surface.blit(self.surface,camera.apply(self))
 		else:
@@ -314,18 +317,22 @@ class World():
 		self.read(f)
 		self.draw()
 
-	def update(self,target):
+	def update(self,target,radius):
 		for b in self.world_blocks:
-			if b.rect.x < target.rect.x + 200 and b.rect.x > target.rect.x - 200:
-				if b.rect.y < target.rect.y + 200 and b.rect.y > target.rect.y - 200:
+			if b.rect.x < target.rect.x + radius and b.rect.x > target.rect.x - radius:
+				if b.rect.y < target.rect.y + radius and b.rect.y > target.rect.y - radius:
 					if b not in self.visible_blocks:
 						self.visible_blocks.append(b)
 				else:
 					if b in self.visible_blocks:
+						b.color = b.startColor
 						self.visible_blocks.remove(b)
 			else:
 				if b in self.visible_blocks:
+					b.color = b.startColor
 					self.visible_blocks.remove(b)
+
+
 
 	def draw(self):
 		num_ligne = 0
