@@ -4,9 +4,9 @@ from pygame.locals import *
 pygame.init()
 
 
-screenX,screenY = 1280,720
+screenX,screenY = 1920,1080
 title = "BlackDungeon"
-screenFlag = 0
+screenFlag = FULLSCREEN
 
 
 FONTS = [
@@ -37,12 +37,12 @@ PLAYER_COLORS = [
 	pygame.Color(255,152,67),
 	pygame.Color(255,85,70)
 ]
-BLOCK_COLORS = {
+BLOCK_TEXTURES = {
 	"wall":pygame.Color(20,20,20),
 	"floor":pygame.Color(110,110,110),
 }
 LIGHT_SPRITE = pygame.image.load("Ressources/Sprites/light.png")
-DUNGEON_SPRITE_SIZE = 42
+DUNGEON_SPRITE_SIZE = 50
 DUNGEON_TILES = {'stone': ' ', 'floor': '.', 'wall': '#','start':'s'}
 
 
@@ -51,11 +51,11 @@ PLAYER_KEY = ["name","coins","size","skills","color","last resolution"]
 
 SKILLS_PRESETS = [
 	{SKILLS[0]:"WARRIOR",SKILLS[1]:70,SKILLS[2]:120,SKILLS[3]:150,SKILLS[4]:10,SKILLS[5]:100,SKILLS[6]:400}, # WARRIOR
-	{SKILLS[0]:"BOWMAN",SKILLS[1]:100,SKILLS[2]:100,SKILLS[3]:80, SKILLS[4]:50,SKILLS[5]:120,SKILLS[6]:500}, # BOWMAN
-	{SKILLS[0]:"WIZARD",SKILLS[1]:85, SKILLS[2]:120,SKILLS[3]:60,SKILLS[4]:100,SKILLS[5]: 80,SKILLS[6]:550}  # WIZARD
+	{SKILLS[0]:"BOWMAN",SKILLS[1]:100,SKILLS[2]:100,SKILLS[3]:80, SKILLS[4]:50,SKILLS[5]:120,SKILLS[6]:400}, # BOWMAN
+	{SKILLS[0]:"WIZARD",SKILLS[1]:85, SKILLS[2]:120,SKILLS[3]:60,SKILLS[4]:100,SKILLS[5]: 80,SKILLS[6]:400}  # WIZARD
 ]
 STARTCOINS = 100
-STARTSIZE = 25
+STARTSIZE = 30
 
 PLAYER_JSON_MODEL = {
   "player":

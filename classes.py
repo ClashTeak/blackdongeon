@@ -1,7 +1,7 @@
-import pygame,sys,random
+import pygame,sys,random,math
 from pygame.locals import *
 from settings import *
-from math import sqrt
+from pygame.math import *
 
 pygame.init()
 
@@ -9,9 +9,8 @@ pygame.init()
 
 
 class Player(pygame.sprite.Sprite):
-	def __init__(self,data,speed):
+	def __init__(self,data,speed,image=None,offset=(0,0)):
 		self.data = data
-
 		for p in self.data["player"]:
 			self.name = p[PLAYER_KEY[0]]
 			self.coins = p[PLAYER_KEY[1]]
@@ -22,44 +21,78 @@ class Player(pygame.sprite.Sprite):
 				p[PLAYER_KEY[4]]["b"])
 
 		self.speed = speed
+		self.angle = 90
+		self.events = {"horizontal":0,"vertical":0,"attack":0}
 
-		self.sx,self.sy = 0,0
-		self.events = [0,0,0] # 0:x-axis    1:y-axis    2:attack
+		self.pos = Vector2(self.rect.x,self.rect.y)
+		self.rect.center = self.pos
+		self.hit_rect = Rect(0,0,self.rect.width,self.rect.height)
+		self.hit_rect.center = self.rect.center
+		self.offset = Vector2(offset[0],offset[1])
 
-		self.picture = pygame.Surface((self.rect.width,self.rect.height))
-		self.picture.fill(self.color)
-
-		self.updateData()
-
-	def update(self,blocks):
-
-		self.sx = self.events[0] * self.speed
-		self.rect.left += self.sx
-		self.collision(blocks,self.sx,0)
-
-		self.sy = self.events[1] * self.speed
-		self.rect.top += self.sy
-		self.collision(blocks,0,self.sy)
+		if image != None:
+			self.image = pygame.transform.scale(image,self.rect.size)
+		else:
+			self.image = pygame.Surface(self.rect.size, pygame.SRCALPHA)
+			self.image.fill(self.color)
+		self.orig_image = self.image
 
 		self.updateData()
 
-	def collision(self,blocks,xvel,yvel):
-		for block in blocks:
-			if block.collision:
-				if pygame.sprite.collide_rect(self, block):
-					if xvel > 0:
-						self.rect.right = block.rect.left
-						self.sx = 0
-					if xvel < 0:
-						self.rect.left = block.rect.right
-						self.sx = 0
-					if yvel > 0:
-						self.rect.bottom = block.rect.top
-						self.sy = 0
-					if yvel < 0:
-						self.rect.top = block.rect.bottom
-						self.sy = 0
+	def move(self):
+		self.pos.x += self.events["horizontal"] * self.speed
+		self.pos.y += self.events["vertical"] * self.speed
 
+
+	def collide_hit_rect(self,one, two):
+		return one.hit_rect.colliderect(two.rect)
+
+
+	def getAngle(self,target_pos,camera=None):
+		radians = math.radians(self.angle)
+		if camera != None:
+			dx = target_pos[0]-camera.apply(self).x
+			dy = target_pos[1]-camera.apply(self).y
+		else:
+			dx,dy = target_pos[0]-self.rect.x, target_pos[1]-self.rect.y
+		self.angle = math.degrees(math.atan2(dy,dx))
+
+	def rotate(self):
+		self.image = pygame.transform.rotate(self.orig_image,-self.angle)
+		self.rect = self.image.get_rect()
+		self.rect.center = self.pos
+
+	def update(self,blocks,target_pos,camera=None):
+		self.getAngle(target_pos,camera)
+		self.rotate()
+		self.move()
+		self.hit_rect.centerx = self.pos.x
+		self.collision(blocks,'x')
+		self.hit_rect.centery = self.pos.y
+		self.collision(blocks,'y')
+		self.rect.center = self.hit_rect.center
+
+		self.updateData()
+
+	def collision(self,blocks,dir):
+		if dir == 'x':
+			hits = pygame.sprite.spritecollide(self, blocks, False,self.collide_hit_rect)
+			if hits:
+				if hits[0].rect.centerx > self.hit_rect.centerx:
+					self.pos.x = hits[0].rect.left - self.hit_rect.width / 2
+				if hits[0].rect.centerx < self.hit_rect.centerx:
+					self.pos.x = hits[0].rect.right + self.hit_rect.width / 2
+				#self.events["horizontal"] = 0
+				self.hit_rect.centerx = self.pos.x
+		if dir == 'y':
+			hits = pygame.sprite.spritecollide(self, blocks, False,self.collide_hit_rect)
+			if hits:
+				if hits[0].rect.centery > self.hit_rect.centery:
+					self.pos.y = hits[0].rect.top - self.hit_rect.height / 2
+				if hits[0].rect.centery < self.hit_rect.centery:
+					self.pos.y = hits[0].rect.bottom + self.hit_rect.height / 2
+				#self.events["vertical"] = 0
+				self.hit_rect.centery = self.pos.y
 
 	def updateData(self):
 		for p in self.data["player"]:
@@ -74,21 +107,31 @@ class Player(pygame.sprite.Sprite):
 
 	def draw(self,surface,camera=None):
 		if camera != None:
-			surface.blit(self.picture,camera.apply(self))
+			surface.blit(self.image,camera.apply(self))
 		else:
-			surface.blit(self.picture,self.rect)
+			surface.blit(self.image,self.rect)
 
 
 class Camera(object):
-    def __init__(self, camera_func, width, height):
-        self.camera_func = camera_func
-        self.state = Rect(0, 0, width, height)
+	def __init__(self, camera_func, width, height):
+		self.camera_func = camera_func
+		self.state = Rect(0, 0, width, height)
 
-    def apply(self, target):
-        return target.rect.move(self.state.topleft)
+	def apply(self, target):
+		return target.rect.move(self.state.topleft)
 
-    def update(self, target):
-        self.state = self.camera_func(self.state, target.rect)
+	def applyRect(self,rect):
+		return rect.move(self.state.topleft)
+
+	def update(self, target):
+		# if (self.apply(target).x < int(self.state.width/2) or
+		# 	self.apply(target).x > int(self.state.width/2) or
+		# 	self.apply(target).y < int(self.state.height/2) or
+		# 	self.apply(target).y > int(self.state.height/2)):
+		# 		#self.state = self.camera_func(self.state, target.rect)
+		# 		self.state.x += -target.events["horizontal"] * target.speed
+		# 		self.state.y += -target.events["vertical"] * target.speed
+		self.state = self.camera_func(self.state, target.rect)
 
 
 
@@ -167,6 +210,31 @@ class ScrollPanel(pygame.sprite.Sprite):
 				self.border)
 
 
+class LightMask:
+	def __init__(self,pos,display,bgColor,flags=0):
+		self.rect = Rect(pos,display)
+		self.mask = pygame.surface.Surface(display,flags).convert()
+		self.colorBG = bgColor
+		self.mask.fill(self.colorBG)
+
+
+	def drawLight(self,radius,pos):
+		# new_radius = radius
+		# tint = 255
+		# while new_radius > int(50/255*radius):
+		# 	pygame.draw.circle(self.mask,(tint,tint,tint),pos,new_radius)
+		# 	if tint > 0:
+		# 		tint -= 1
+		# 	else:
+		# 		tint = 0
+		# 	new_radius -= 1
+		sprite = pygame.transform.scale(LIGHT_SPRITE,(radius,radius)).convert_alpha()
+		self.mask.blit(sprite,pos)
+
+	def draw(self,surface):
+		surface.blit(self.mask,self.rect,special_flags=pygame.BLEND_RGBA_SUB)
+
+
 
 class InputBox:
 
@@ -236,6 +304,7 @@ class Button(pygame.sprite.Sprite):
 		self.currentColor = self.colors[0]
 		self.picture = pygame.Surface((self.rect.width,self.rect.height))
 		self.picture.fill(self.currentColor)
+		self.picture.convert()
 
 		self.font = font
 		self.text = text
@@ -276,12 +345,14 @@ class Button(pygame.sprite.Sprite):
 
 
 class Block(pygame.sprite.Sprite):
-	def __init__(self,x,y,w,h,color,collision=True):
+	def __init__(self,x,y,w,h,color,group,collision=True):
+		self.groups = group
+		pygame.sprite.Sprite.__init__(self, self.groups)
 		self.rect = Rect(x,y,w,h)
 		self.color = color
-		self.startColor = color
-		self.surface = pygame.Surface((w,h))
+		self.surface = pygame.Surface((w,h),pygame.SRCALPHA)
 		self.surface.fill(self.color)
+		self.surface.convert()
 		self.collision = collision
 
 	def draw(self,surface,camera=None):
@@ -293,14 +364,19 @@ class Block(pygame.sprite.Sprite):
 
 
 class World():
-	def __init__(self,colors,sprite_size):
+	def __init__(self,colors,sprite_size,rect=Rect(0,0,0,0)):
+		self.rect = rect
 		self.structure = 0
 		self.colors = colors
 		self.sprite_size = sprite_size
 		self.level = 1
 		self.world_blocks = []
 		self.visible_blocks = []
+		self.collide_blocks = []
 		self.start_points = []
+		self.walls = pygame.sprite.Group()
+		self.floor = pygame.sprite.Group()
+		self.surface = None
 
 	def read(self,string):
 		level_structure = []
@@ -317,22 +393,33 @@ class World():
 		self.read(f)
 		self.draw()
 
-	def update(self,target,radius):
-		for b in self.world_blocks:
+	def updateTarget(self,target,radius,list,inlist):
+		for b in inlist:
 			if b.rect.x < target.rect.x + radius and b.rect.x > target.rect.x - radius:
 				if b.rect.y < target.rect.y + radius and b.rect.y > target.rect.y - radius:
-					if b not in self.visible_blocks:
-						self.visible_blocks.append(b)
+					if b not in list:
+						list.append(b)
 				else:
-					if b in self.visible_blocks:
-						b.color = b.startColor
-						self.visible_blocks.remove(b)
+					if b in list:
+						list.remove(b)
 			else:
-				if b in self.visible_blocks:
-					b.color = b.startColor
-					self.visible_blocks.remove(b)
+				if b in list:
+					list.remove(b)
 
+	def updateScreen(self,game,camera=None):
+		for b in self.world_blocks:
+			onscreen = game.onScreen(b,camera)
+			if onscreen and b not in self.visible_blocks:
+				self.visible_blocks.append(b)
+			elif onscreen == False and b in self.visible_blocks:
+				self.visible_blocks.remove(b)
 
+	# def drawOnScreen(self,surface,game,camera):
+	# 	worldBG = pygame.Surface(game.DISPLAY,game.FLAGS,game.DEPTH)
+	# 	for b in self.visible_blocks:
+	# 		if game.onScreen(b,camera):
+	# 			b.draw(worldBG,camera)
+	# 	surface.blit(worldBG,(0,0))
 
 	def draw(self):
 		num_ligne = 0
@@ -342,14 +429,22 @@ class World():
 				x = num_case * self.sprite_size
 				y = num_ligne * self.sprite_size
 				if sprite == DUNGEON_TILES["floor"]:
-					self.world_blocks.append(Block(x,y,self.sprite_size,self.sprite_size,self.colors["floor"],False))
+					self.world_blocks.append(Block(x,y,self.sprite_size,
+						self.sprite_size,self.colors["floor"],self.floor,False))
 				elif sprite == DUNGEON_TILES["wall"]:
-					self.world_blocks.append(Block(x,y,self.sprite_size,self.sprite_size,self.colors["wall"]))
+					self.world_blocks.append(Block(x,y,self.sprite_size,
+						self.sprite_size,self.colors["wall"],self.walls))
 				elif sprite == DUNGEON_TILES["start"]:
-					self.world_blocks.append(Block(x,y,self.sprite_size,self.sprite_size,self.colors["floor"],False))
+					self.world_blocks.append(Block(x,y,self.sprite_size
+						,self.sprite_size,self.colors["floor"],self.floor,False))
 					self.start_points.append([x,y])
 				num_case += 1
 			num_ligne += 1
+		self.surface = pygame.Surface((num_case*self.sprite_size,
+			num_ligne * self.sprite_size))
+		for b in self.world_blocks:
+			b.draw(self.surface)
+		self.surface.convert_alpha()
 
 
 

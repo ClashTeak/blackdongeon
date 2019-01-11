@@ -2,6 +2,7 @@ import pygame,sys,random, json, os
 from pygame.locals import *
 from settings import *
 from classes import *
+from spritesheet import *
 
 pygame.init()
 
@@ -85,11 +86,37 @@ class Game:
 		return int(self.XWIN*self.YWIN/(xRes*yRes/x))
 
 
+	def onScreen(self,object,camera=None):
+		if camera != None:
+			if (camera.apply(object).x + object.rect.width > 0 and
+				camera.apply(object).x < self.XWIN):
+				if(camera.apply(object).y + object.rect.height > 0 and
+					camera.apply(object).y < self.YWIN):
+					return True
+		else:
+			if(object.rect.x + object.rect.width > 0 and
+				object.rect.x < self.XWIN):
+				if (object.rect.y + object.rect.height > 0 and
+					object.rect.y < self.YWIN):
+					return True
+		return False
+
 	# ALL KIND OF CAMERA.
 	def simple_camera(self,camera, target_rect):
-	    l, t, _, _ = target_rect
+	    l, t = target_rect.center
 	    _, _, w, h = camera
 	    return Rect(-l+self.HALF_XWIN, -t+self.HALF_YWIN, w, h)
+
+	def complex_camera(self,camera, target_rect):
+		l, t, _, _ = target_rect
+		_, _, w, h = camera
+		l, t, _, _ = -l+self.HALF_XWIN, -t+self.HALF_YWIN, w, h
+
+		l = min(0, l)                           # stop scrolling at the left edge
+		l = max(-(camera.width-self.XWIN), l)   # stop scrolling at the right edge
+		t = max(-(camera.height-self.YWIN), t) # stop scrolling at the bottom
+		t = min(0, t)                           # stop scrolling at the top
+		return Rect(l, t, w, h)
 
 
 
@@ -97,45 +124,55 @@ class Game:
 	#                MAIN GAME
 	#---------------------------------------
 	def game(self,playerData,worldData):
-		#creating PLAYER
+		#update PLAYER data to window size
 		data = playerData
-		data["player"][0][PLAYER_KEY[2]] = self.applyXY(data["player"][0][PLAYER_KEY[2]],
-			data["player"][0][PLAYER_KEY[5]]["x"],
-			data["player"][0][PLAYER_KEY[5]]["y"]) # size on 1280 * 720 resolution
 		player_speed = self.applyXY(5)
+		for player in data["player"]:
+			player[PLAYER_KEY[2]] = self.applyXY(player[PLAYER_KEY[2]],
+				player[PLAYER_KEY[5]]["x"],
+				player[PLAYER_KEY[5]]["y"]) # size on 1280 * 720 resolution
+
+		#player object instance
 		player = Player(data,player_speed)
 
-		#camera target=player
-		camera = Camera(self.simple_camera,self.XWIN,self.YWIN)
-		#light filter
-		filter = pygame.surface.Surface(self.DISPLAY,self.FLAGS,self.DEPTH)
-		light_sprite = pygame.transform.scale(LIGHT_SPRITE,
-			(player.skills[SKILLS[6]],player.skills[SKILLS[6]]))
-
 		#place block from saved world (string)
-		world = World(BLOCK_COLORS,self.applyXY(DUNGEON_SPRITE_SIZE))
+		world = World(BLOCK_TEXTURES,self.applyXY(DUNGEON_SPRITE_SIZE))
 		world.generate(worldData)
-
 
 		#Define player spawn position
 		if len(world.start_points) > 0: #choose a random position from start points
 			start_point_index = random.randint(0,len(world.start_points)-1)
 			start_point = world.start_points[start_point_index]
-			player.rect.x,player.rect.y = start_point[0],start_point[1]
+			player.pos.x,player.pos.y = start_point[0],start_point[1]
 		else:# find random position on floor
 			findedBlock = False
 			while not findedBlock:
 				block = random.choice(world.world_blocks)
 				if not block.collision:
 					findedBlock = True
-			player.rect.x = block.rect.x
-			player.rect.y = block.rect.y
+			player.pos.x = block.rect.x
+			player.pos.y = block.rect.y
 
+		#camera target=player
+		camera = Camera(self.simple_camera,self.XWIN,self.YWIN)
+		camera.state = camera.camera_func(camera.state, player.rect)
+
+		#Create Light mask
+		lightMask = LightMask((0,0),self.DISPLAY,pygame.Color(110,110,110),self.FLAGS)
+		lightMask.mask.fill(lightMask.colorBG)
+		lightMask.drawLight(self.applyXY(player.skills[SKILLS[6]]),
+			(camera.apply(player).x-
+			int(self.applyXY(player.skills[SKILLS[6]])/2-player.rect.width/2),
+			camera.apply(player).y -
+			int(self.applyXY(player.skills[SKILLS[6]])/2-player.rect.height/2)))
+
+
+		showFPS = False
+		currentFPS = 0
+		showLightMask = True
 
 		continueGame = True
 		pause = ""
-		lights = True
-		currentFPS = 0
 		while continueGame:
 			#//////EVENTS/////////
 			for event in pygame.event.get():
@@ -144,34 +181,37 @@ class Game:
 				elif event.type == KEYDOWN:
 					if event.key == K_ESCAPE:
 						pause = self.pauseMenu()
-						player.sx,player.sy = 0,0
-						player.events = [0,0,0]
 					if event.key == K_LEFT:
-						player.events[0] = -1
+						player.events["horizontal"] = -1
 					if event.key == K_RIGHT:
-						player.events[0] = 1
+						player.events["horizontal"] = 1
 					if event.key == K_UP:
-						player.events[1] = -1
+						player.events["vertical"] = -1
 					if event.key == K_DOWN:
-						player.events[1] = 1
+						player.events["vertical"] = 1
 					if event.key == K_l:
-						if lights:
-							lights = False
+						if showLightMask:
+							showLightMask = False
 						else:
-							lights = True
+							showLightMask = True
+					if event.key == K_f:
+						if showFPS:
+							showFPS = False
+						else:
+							showFPS = True
 				elif event.type == KEYUP:
 					if event.key == K_RIGHT:
-						if player.events[0] == 1:
-							player.events[0] = 0
+						if player.events["horizontal"] == 1:
+							player.events["horizontal"] = 0
 					if event.key == K_LEFT:
-						if player.events[0] == -1:
-							player.events[0] = 0
+						if player.events["horizontal"] == -1:
+							player.events["horizontal"] = 0
 					if event.key == K_UP:
-						if player.events[1] == -1:
-							player.events[1] = 0
+						if player.events["vertical"] == -1:
+							player.events["vertical"] = 0
 					if event.key == K_DOWN:
-						if player.events[1] == 1:
-							player.events[1] = 0
+						if player.events["vertical"] == 1:
+							player.events["vertical"] = 0
 
 			#///////UPDATES////////
 			if pause == "save":
@@ -184,32 +224,31 @@ class Game:
 				self.continueGame = False
 				break
 
-			player.update(world.visible_blocks)
+			mouse_pos = pygame.mouse.get_pos()
+			mouseRect = Rect(mouse_pos[0],mouse_pos[1],1,1)
+			#player moves,rotates....
+			player.update(world.walls,(mouse_pos[0],mouse_pos[1]),camera)
+			#camera target player
 			camera.update(player)
-			if player.skills[SKILLS[6]] < 500:
-				world.update(player,self.applyXY(player.skills[SKILLS[6]]))
-			else:
-				world.update(player,self.applyXY(100))
 
 			#///////DISPLAY////////
+
+			#draw Backgrounds
 			self.window.fill(COLORS[1])
-
-			if player.skills[SKILLS[6]] < 500:
-				for block in world.visible_blocks:
-					block.draw(self.window,camera)
-			else:
-				for block in world.world_blocks:
-					block.draw(self.window,camera)
-
+			self.window.blit(world.surface,camera.applyRect(world.rect))
+			#draw player
 			player.draw(self.window,camera)
-			filter.fill(pygame.Color(110,110,110))
-			filter.blit(light_sprite, tuple(map(lambda x: x-int(player.skills[SKILLS[6]]/2-player.rect.width/2),camera.apply(player))))
-			self.window.blit(filter, (0,0), special_flags=pygame.BLEND_RGBA_SUB)
+			#draw light mask
+			if showLightMask:
+				lightMask.draw(self.window)
+			#draw current fps in topleft
+			if showFPS:
+				self.text(self.applyX(20),self.applyY(20),FONTS[0],self.window,
+					"FPS: "+str(currentFPS),COLORS[0])
 
-			#self.text(self.applyX(20),self.applyY(20),FONTS[0],self.window,"FPS: "+str(currentFPS),COLORS[0])
-
-			pygame.display.update()
-			currentFPS = self.clock.tick(self.FPS)
+			currentFPS = int(self.clock.get_fps())
+			pygame.display.flip()
+			self.clock.tick(self.FPS)
 
 
 	#---------------------------------------
