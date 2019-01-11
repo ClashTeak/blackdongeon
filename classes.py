@@ -124,13 +124,6 @@ class Camera(object):
 		return rect.move(self.state.topleft)
 
 	def update(self, target):
-		# if (self.apply(target).x < int(self.state.width/2) or
-		# 	self.apply(target).x > int(self.state.width/2) or
-		# 	self.apply(target).y < int(self.state.height/2) or
-		# 	self.apply(target).y > int(self.state.height/2)):
-		# 		#self.state = self.camera_func(self.state, target.rect)
-		# 		self.state.x += -target.events["horizontal"] * target.speed
-		# 		self.state.y += -target.events["vertical"] * target.speed
 		self.state = self.camera_func(self.state, target.rect)
 
 
@@ -219,15 +212,6 @@ class LightMask:
 
 
 	def drawLight(self,radius,pos):
-		# new_radius = radius
-		# tint = 255
-		# while new_radius > int(50/255*radius):
-		# 	pygame.draw.circle(self.mask,(tint,tint,tint),pos,new_radius)
-		# 	if tint > 0:
-		# 		tint -= 1
-		# 	else:
-		# 		tint = 0
-		# 	new_radius -= 1
 		sprite = pygame.transform.scale(LIGHT_SPRITE,(radius,radius)).convert_alpha()
 		self.mask.blit(sprite,pos)
 
@@ -376,7 +360,8 @@ class World():
 		self.start_points = []
 		self.walls = pygame.sprite.Group()
 		self.floor = pygame.sprite.Group()
-		self.surface = None
+		self.bg_surface = None # background surface (floor)
+		self.fg_surface = None # foreground surface (walls)
 
 	def read(self,string):
 		level_structure = []
@@ -440,11 +425,18 @@ class World():
 					self.start_points.append([x,y])
 				num_case += 1
 			num_ligne += 1
-		self.surface = pygame.Surface((num_case*self.sprite_size,
-			num_ligne * self.sprite_size))
+		self.bg_surface = pygame.Surface((num_case*self.sprite_size,
+			num_ligne * self.sprite_size),pygame.SRCALPHA)
+		self.fg_surface = pygame.Surface((num_case*self.sprite_size,
+			num_ligne * self.sprite_size),pygame.SRCALPHA)
+
 		for b in self.world_blocks:
-			b.draw(self.surface)
-		self.surface.convert_alpha()
+			if b.collision:
+				b.draw(self.fg_surface)
+			else:
+				b.draw(self.bg_surface)
+		self.bg_surface.convert_alpha()
+		self.fg_surface.convert_alpha()
 
 
 

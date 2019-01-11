@@ -4,9 +4,9 @@ from pygame.locals import *
 pygame.init()
 
 
-screenX,screenY = 1920,1080
+screenX,screenY = 1280,720
 title = "BlackDungeon"
-screenFlag = FULLSCREEN
+screenFlag = 0
 
 
 FONTS = [

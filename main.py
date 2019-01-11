@@ -9,7 +9,7 @@ pygame.init()
 
 #----------- Game Class -------------
 class Game:
-	def __init__(self,screenX,screenY,title="Title",FLAGS=0,FPS=60,DEPTH=32):
+	def __init__(self,screenX,screenY,title="Title",FLAGS=0,FPS=64,DEPTH=32):
 		self.XWIN,self.YWIN = screenX,screenY
 		self.HALF_XWIN, self.HALF_YWIN = int(self.XWIN/2), int(self.YWIN/2)
 
@@ -235,9 +235,12 @@ class Game:
 
 			#draw Backgrounds
 			self.window.fill(COLORS[1])
-			self.window.blit(world.surface,camera.applyRect(world.rect))
-			#draw player
+			#floor
+			self.window.blit(world.bg_surface,camera.applyRect(world.rect))
+			#player
 			player.draw(self.window,camera)
+			#walls
+			self.window.blit(world.fg_surface,camera.applyRect(world.rect))
 			#draw light mask
 			if showLightMask:
 				lightMask.draw(self.window)
